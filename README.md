@@ -13,7 +13,7 @@ work, and uBlock Origin comes installed.
   (32-bit arm).
 - Base: Chromium `157.0.8103.46` (commit `800628ad`).
 - Runs on: Android 10 or newer, on arm64 or 32-bit ARM. There is no x86 build.
-- Size: 298 patches, 46,977 insertions and 3,249 deletions across 873 files.
+- Size: 299 patches, 46,980 insertions and 3,260 deletions across 873 files.
 
 ## What you can do
 
