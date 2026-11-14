@@ -20,7 +20,10 @@ preference when the status isn't `AVAILABLE`.
 
 This hook uses `XC_MethodHook.afterHookedMethod` to intercept a **result of 6
 only**, reading `PrefService.getBoolean("autofill.using_virtual_view_structure")`
-in the *same browser process*:
+in the *same browser process*. Bare 2.0.3's R8 output renames this method to
+`PrefService.b(String)` (verified by scanning DEX method definitions and both call
+sites in the release APK). The hook resolves `getBoolean` first and falls back to
+the verified runtime method `b`; an unknown signature fails closed:
 
 | Original status | Saved pref | New status |
 | --- | --- | --- |
@@ -63,6 +66,9 @@ On this branch, push a change under `lsposed-autofill/` to start a build. Open
 `app-debug.apk` artifact after a successful run. It uses an ephemeral Android
 debug signing key and is intended **only for testing**. Rebuilds from separate
 runners may use different signing keys and therefore may not install as updates.
+**To move from test 0.1.0 to 0.1.1:** disable and uninstall only the LSPosed
+module APK (`dev.rollingbeans.bareautofill`), then install the new APK and
+re-enable the Bare scope. Do not uninstall Bare or clear browser data.
 
 To build locally with Android SDK and Gradle 8.9 installed:
 
@@ -74,6 +80,8 @@ gradle :app:testDebugUnitTest :app:assembleDebug --no-daemon
 ## Device test
 
 1. Install the *test* APK and enable **Bare Autofill Bridge** in LSPosed/Vector.
+   Check `[BareAutofillBridge] Hook installed ... PrefService reader=b` for
+   official Bare 2.0.3. An absent reader means this APK is incompatible.
 2. Select only `org.barebrowser` in module scope. Never enable system processes.
 3. Force-stop Bare and launch it again. In Android Settings, verify that
    **Autofill with Google** is already selected.

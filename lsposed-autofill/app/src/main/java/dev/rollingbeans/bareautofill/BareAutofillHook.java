@@ -1,5 +1,6 @@
 package dev.rollingbeans.bareautofill;
 
+import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
@@ -38,6 +39,20 @@ public final class BareAutofillHook implements IXposedHookLoadPackage {
                 return;
             }
 
+            // R8 obfuscates public PrefService accessors in official Bare 2.0.3.
+            // DEX verification: this JNI-exposed availability method invokes PrefService.b
+            // twice for the boolean policy and platform-autofill preferences.
+            Method reader = XposedHelpers.findMethodExactIfExists(
+                    prefClass, "getBoolean", String.class);
+            if (reader == null) {
+                reader = XposedHelpers.findMethodExactIfExists(
+                        prefClass, "b", String.class);
+            }
+            if (reader == null || reader.getReturnType() != boolean.class) {
+                XposedBridge.log(TAG + "Hook unavailable: boolean preference reader not found");
+                return;
+            }
+            final Method preferenceReader = reader;
             AtomicBoolean mappedOnce = new AtomicBoolean(false);
             AtomicBoolean failedOnce = new AtomicBoolean(false);
 
@@ -60,8 +75,9 @@ public final class BareAutofillHook implements IXposedHookLoadPackage {
                             }
 
                             try {
-                                Object preference = XposedHelpers.callMethod(
-                                        param.args[0], "getBoolean", PLATFORM_PREF);
+                                // Reuse the runtime method resolved before installing the hook.
+                                Object preference = preferenceReader.invoke(
+                                        param.args[0], PLATFORM_PREF);
                                 if (!(preference instanceof Boolean)) {
                                     return;
                                 }
@@ -84,7 +100,8 @@ public final class BareAutofillHook implements IXposedHookLoadPackage {
                             }
                         }
                     });
-            XposedBridge.log(TAG + "Hook installed in " + TARGET_PACKAGE);
+            XposedBridge.log(TAG + "Hook installed in " + TARGET_PACKAGE
+                    + "; PrefService reader=" + preferenceReader.getName());
         } catch (Throwable error) {
             XposedBridge.log(TAG + "Hook installation failed ("
                     + error.getClass().getSimpleName() + ")");
