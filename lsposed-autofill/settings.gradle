@@ -1,0 +1,20 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        // Legacy Xposed API 82 is compile-only; it must never be packaged into the APK.
+        maven { url 'https://api.xposed.info/' }
+    }
+}
+
+rootProject.name = 'BareAutofillBridge'
+include ':app'
