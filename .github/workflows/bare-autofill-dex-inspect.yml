@@ -1,0 +1,29 @@
+name: Inspect official Bare APK PrefService methods
+
+on:
+  push:
+    branches:
+      - feature/bare-autofill-lsposed
+    paths:
+      - .github/workflows/bare-autofill-dex-inspect.yml
+      - lsposed-autofill/tools/inspect_prefservice_dex.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download official Bare v2.0.3 APK and verify its published hash
+        run: |
+          set -euo pipefail
+          base=https://github.com/BareBrowser/bare-browser/releases/download/v2.0.3
+          curl --fail --location --retry 3 --silent --show-error "$base/SHA256SUMS.txt" -o SHA256SUMS.txt
+          curl --fail --location --retry 3 --silent --show-error "$base/Bare-2.0.3-arm64-v8a.apk" -o Bare-2.0.3-arm64-v8a.apk
+          grep 'Bare-2.0.3-arm64-v8a.apk' SHA256SUMS.txt | sha256sum -c -
+      - name: Inventory runtime Java signatures in DEX (no class loading)
+        run: python3 lsposed-autofill/tools/inspect_prefservice_dex.py Bare-2.0.3-arm64-v8a.apk
