@@ -96,7 +96,32 @@ def inspect_dex(data: bytes, file_name: str) -> int:
                 if param_off:
                     n = u4(data, param_off)
                     args = [descriptor(struct.unpack_from("<H", data, param_off + 4 + 2 * i)[0]) for i in range(n)]
-                print(f"  {kind}: {string(name_idx)}({', '.join(args)}) -> {return_type} code_off={code_off}")
+                method_name = string(name_idx)
+                print(f"  {kind}: {method_name}({', '.join(args)}) -> {return_type} code_off={code_off}")
+                if (class_idx_to_name[class_idx].endswith("AutofillClientProviderUtils;")
+                        and method_name == "getAndroidAutofillFrameworkAvailability"
+                        and code_off):
+                    instruction_count = u4(data, code_off + 12)
+                    insns = struct.unpack_from(
+                        "<" + str(instruction_count) + "H", data, code_off + 16)
+                    print("    PrefService method references in the native-exposed Java implementation:")
+                    for word_index in range(len(insns) - 1):
+                        if insns[word_index] & 0xFF not in (0x6E, 0x74, 0x72, 0x78):
+                            continue
+                        called_id = insns[word_index + 1]
+                        if called_id >= method_size:
+                            continue
+                        callee_off = method_off + 8 * called_id
+                        callee_class, callee_proto, callee_name_idx = struct.unpack_from(
+                            "<HHI", data, callee_off)
+                        if callee_class == next(
+                                (i for i, name in class_idx_to_name.items() if name == CLASS),
+                                -1):
+                            print(
+                                f"      instruction={word_index} "
+                                f"method={string(callee_name_idx)} "
+                                f"return={descriptor(u4(data, proto_off + 12 * callee_proto + 4))}"
+                            )
     return num_found
 
 
