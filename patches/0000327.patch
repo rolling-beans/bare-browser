@@ -1,0 +1,55 @@
+diff --git a/chrome/browser/autofill/android/java/src/org/chromium/chrome/browser/autofill/AutofillClientProviderUtils.java b/chrome/browser/autofill/android/java/src/org/chromium/chrome/browser/autofill/AutofillClientProviderUtils.java
+--- a/chrome/browser/autofill/android/java/src/org/chromium/chrome/browser/autofill/AutofillClientProviderUtils.java
++++ b/chrome/browser/autofill/android/java/src/org/chromium/chrome/browser/autofill/AutofillClientProviderUtils.java
+@@ -32,7 +32,6 @@
+ public class AutofillClientProviderUtils {
+     private static final String TAG = "AutofillClientProviderUtils";
+ 
+-    private static final String AWG_PACKAGE_NAME = "com.google.android.gms";
+     private static @Nullable Integer sAndroidAutofillFrameworkAvailabilityForTesting;
+     private static @Nullable String sAndroidAutofillServicePackageNameForTesting;
+ 
+@@ -73,9 +72,8 @@
+     }
+ 
+     /**
+-     * Returns whether all conditions are met for using the Android Autofill framework in Chrome on
+-     * Android: The AutofillManager exists, is enabled, and its provider is not Autofill with
+-     * Google.
++     * Returns whether all conditions are met for using the Android Autofill framework with the
++     * selected system service: policy permits it, the framework is supported, and a service exists.
+      *
+      * @param profile A {@link PrefService} which keeps the pref enabling this feature.
+      * @return {@link AndroidAutofillAvailabilityStatus.AVAILABLE} if Android Autofill can be used
+@@ -102,9 +100,6 @@
+         if (autofillServicePackage == null) {
+             return AndroidAutofillAvailabilityStatus.UNKNOWN_ANDROID_AUTOFILL_SERVICE;
+         }
+-        if (AWG_PACKAGE_NAME.equals(autofillServicePackage)) {
+-            return AndroidAutofillAvailabilityStatus.ANDROID_AUTOFILL_SERVICE_IS_GOOGLE;
+-        }
+         // If the user explicitly chose the current Autofill Service before, use it again. The
+         // browser may default to built-in Autofill while the preferred provider is unavailable.
+         String storedPackage =
+@@ -157,9 +152,6 @@
+         if (autofillServicePackage == null) {
+             return; // No update possible.
+         }
+-        if (AWG_PACKAGE_NAME.equals(autofillServicePackage)) {
+-            return; // AWG can never be the preferred Autofill service.
+-        }
+         prefs.setString(
+                 Pref.AUTOFILL_THIRD_PARTY_PACKAGE_USED_FOR_PLATFORM_AUTOFILL,
+                 autofillServicePackage);
+diff --git a/chrome/browser/ui/autofill/autofill_client_provider.cc b/chrome/browser/ui/autofill/autofill_client_provider.cc
+--- a/chrome/browser/ui/autofill/autofill_client_provider.cc
++++ b/chrome/browser/ui/autofill/autofill_client_provider.cc
+@@ -80,7 +80,7 @@
+   if (uses_platform_autofill_) {
+     // Update the package of the actively used Autofill Service while platform
+     // autofill is used. This allows restoring platform autofill later if it's
+-    // temporarily unavailable. Calling this for AwG would reset the pref.
++    // temporarily unavailable, including Google's Android Autofill service.
+     Java_AutofillClientProviderUtils_updatePackageUsedForAutofill(
+         base::android::AttachCurrentThread(), prefs, uses_platform_autofill_);
+   }
