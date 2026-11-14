@@ -1,7 +1,7 @@
 # The patch series
 
-The series in [`patches/`](../patches) is 298 files, `0000001.patch` to `0000326.patch`, numbered
-in the order they apply. The files carry no descriptions.
+The series in [`patches/`](../patches) is 299 files, `0000001.patch` to `0000327.patch`, numbered
+in the order they apply. The files carry no descriptions. `0000327.patch` permits the Android system Autofill with Google service to be selected in Bare.
 
 `0000210.patch` is not in the series. That number belongs to the Google Play build, which compiles
 the update check out. The GitHub build keeps the check. `0000117.patch` is also missing: Chromium 157
